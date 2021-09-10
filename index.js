@@ -4,6 +4,7 @@ const morgan = require('morgan')
 const cors = require('cors')
 const app = express()
 
+app.use(express.static('build'))
 app.use(cors())
 /* Ilman json-parserin lisäämistä eli komentoa app.use(express.json()) 
 pyynnön kentän body arvo olisi ollut määrittelemätön. 
