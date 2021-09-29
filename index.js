@@ -21,7 +21,8 @@ morgan.token('personInfo', (request, response) =>
 let persons = [
     {
         id: 1,
-        name: "Arto Hellas",
+        //name: "Arto Hellas",
+        name: "Timppa",
         number: "040-123456"
     },
     {
