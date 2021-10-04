@@ -1,4 +1,3 @@
-console.log("mongo.js käynnistyi.")
 const mongoose = require('mongoose')
 
 const password = process.argv[2]
@@ -39,7 +38,7 @@ if (addingNew)
   Person.find({}).then(result => {
     console.log("Phonebook:")
     result.forEach(person => {
-      console.log(person)
+      console.log(`${person.name} ${person.number}`)
     })
     mongoose.connection.close()
   })
