@@ -1,0 +1,19 @@
+@baseUrl = http://localhost:3001/api/persons/
+
+# @name createPerson
+POST {{baseUrl}} HTTP/1.1
+Content-Type: application/json
+
+{
+    "name": "Testi Käyttäjä",
+    "number": "050 444 3333"
+}
+
+###
+
+@personId = {{createPerson.response.body.$.id}}
+
+GET {{baseUrl}}{{personId}}
+
+###
+DELETE {{baseUrl}}{{personId}}
