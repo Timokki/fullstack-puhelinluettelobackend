@@ -1,7 +1,9 @@
 const { json } = require('express')
+require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
+const Person = require('./models/person')
 const app = express()
 
 app.use(express.static('build'))
@@ -18,30 +20,6 @@ morgan.token('personInfo', (request, response) =>
   return JSON.stringify(request.body)
 })
 
-let persons = [
-    {
-        id: 1,
-      
-        name: "Arto Hellas",
-        number: "040-123456"
-    },
-    {
-        id: 2,
-        name: "Ada Lovelace",
-        number: "39-44-5323523"
-    },
-    {
-        id: 3,
-        name: "Dan Abramov",
-        number: "12-43-234345"
-    },
-    {
-        id: 4,
-        name: "Mary Poppendieck",
-        number: "39-23-6423122"
-    }
-]
-
 // Route juureen. Routet ovat tapahtumankäsittelijöitä, jotka käsittelevät pyynnöt osoitteeseen.
 // request parametri sisältää pyynnön tiedot ja responsen avulla määritellään miten pyyntöön vastataan
 
@@ -51,21 +29,28 @@ app.get('/', (req, res) => {
 
 // Route /api/persons hakemistoon
 app.get('/api/persons', (req, res) => {
-  res.json(persons)
+  Person.find({}).then(person => {
+    res.json(person)
+  })
 })
 
 // Route /api/persons/id hakemistoon
 app.get('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id)
-  const person = persons.find(person => person.id === id)
-  console.log(`Person id: ${id}`)
-
-  if (person) {    
-    res.json(person)  
-  } 
-  else {
-      res.status(404).end()  
-    }
+  Person.findById(req.params.id).then(person => {
+    if (person) {    
+      res.json(person)  
+    } 
+    else {
+        res.status(404).end()  
+      }
+  })
+  /* catch-lohko jossa käsitellään tapaukset, joissa findById-metodin 
+  palauttama promise päätyy rejected-tilaan
+  */
+  .catch(error => {
+    console.log(error)      
+    res.status(400).send({ error: 'malformatted id' })    
+  })
 })
 
 app.delete('/api/persons/:id', (req, res) => {
@@ -86,7 +71,7 @@ app.get('/info', (req, res) => {
   })
 
   app.use(morgan(':method :url :status :res[content-length] - :response-time ms :personInfo'))
-  //app.use(morgan(':id :method :url :response-time'))
+
   app.post('/api/persons', (request, response) => {
     //console.log(`request.body: ${request.body.name}`)
     const body = request.body
@@ -105,14 +90,18 @@ app.get('/info', (req, res) => {
       })
     }
     
-    
-  
-    const person = {
-      id: generateId(),
+    const person = new Person({
       name: body.name,
       number: body.number
-    }
+    })
   
+    /*Pyyntöön vastataan save-operaation takaisinkutsufunktion sisällä. 
+    Näin varmistutaan, että operaation vastaus tapahtuu vain, jos operaatio 
+    on onnistunut. Palaamme virheiden käsittelyyn myöhemmin.*/
+    person.save().then(savedPerson => {
+      response.json(savedPerson)
+    })
+
     persons = persons.concat(person)
   
     response.json(person)
@@ -131,7 +120,8 @@ app.get('/info', (req, res) => {
     */
   }
 
-const PORT = process.env.PORT || 3001
+//const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
