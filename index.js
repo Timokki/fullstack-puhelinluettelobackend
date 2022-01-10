@@ -14,6 +14,22 @@ json-parserin toimintaperiaatteena on, että se ottaa pyynnön mukana olevan JSO
 muuttaa sen JavaScript-olioksi ja sijoittaa request-olion kenttään body ennen kuin routen 
 käsittelijää kutsutaan. */
 app.use(express.json())
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :personInfo'))
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' })
+  }
+  else if (error.name === 'ValidationError') {    
+    return response.status(400).json({ error: error.message })
+    next(error)
+  }
+}
+// tämä tulee kaikkien muiden middlewarejen rekisteröinnin jälkeen!
+app.use(errorHandler)
+
 //app.use(morgan('tiny'))
 morgan.token('personInfo', (request, response) =>
 {
@@ -24,18 +40,22 @@ morgan.token('personInfo', (request, response) =>
 // request parametri sisältää pyynnön tiedot ja responsen avulla määritellään miten pyyntöön vastataan
 
 app.get('/', (req, res) => {
+  console.log("app.get /")
   res.send('<h1>Hello World!</h1>')
 })
 
 // Route /api/persons hakemistoon
 app.get('/api/persons', (req, res) => {
+  console.log("app.get /api/persons")
   Person.find({}).then(person => {
     res.json(person)
   })
+  .catch(error => next(error))
 })
 
 // Route /api/persons/id hakemistoon
 app.get('/api/persons/:id', (req, res, next) => {
+  console.log("GET /api/persons/:id")
   Person.findById(req.params.id).then(person => {
     if (person) {    
       res.json(person)  
@@ -51,8 +71,7 @@ app.get('/api/persons/:id', (req, res, next) => {
 })
 
 app.delete('/api/persons/:id', (req, res, next) => {
-  Person.findByIdAndRemove(req.params.id)
-  .then(result => {
+  Person.findByIdAndRemove(req.params.id).then(result => {
     res.status(204).end()
   })
   .catch(error => next(error))
@@ -64,14 +83,12 @@ app.get('/info', (req, res) => {
     let reqTime = new Date(Date.now())
     morgan(':method :url :status :res[content-length] - :response-time ms')
     res.send(
-        `phonebook has info for ${persons.length} people <br>
+        `phonebook has info for ${Person.length} people <br>
         ${reqTime.toString()}`
     )
   })
 
-  app.use(morgan(':method :url :status :res[content-length] - :response-time ms :personInfo'))
-
-  app.post('/api/persons', (request, response) => {
+  app.post('/api/persons', (request, response, next) => {
     //console.log(`request.body: ${request.body.name}`)
     const body = request.body
 
@@ -90,6 +107,7 @@ app.get('/info', (req, res) => {
         })
       }
     })
+    .catch(error => next(error))
     
     const person = new Person({
       name: body.name,
@@ -103,6 +121,7 @@ app.get('/info', (req, res) => {
     person.save().then(savedPerson => {
       response.json(savedPerson)
     })
+    .catch(error => next(error))
 
     //persons = persons.concat(person)
   
@@ -127,19 +146,6 @@ app.get('/info', (req, res) => {
     })
     .catch(error => next(error))
 })
-
-  const errorHandler = (error, request, response, next) => {
-    console.error(error.message)
-  
-    if (error.name === 'CastError') {
-      return response.status(400).send({ error: 'malformatted id' })
-    }
-  
-    next(error)
-  }
-  
-  // tämä tulee kaikkien muiden middlewarejen rekisteröinnin jälkeen!
-  app.use(errorHandler)
 
   const generateId = () => {
     const newId = Math.floor(Math.random() * 38000)

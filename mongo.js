@@ -11,8 +11,15 @@ mongoose.connect(url)
 
 // Scheema kertoo mongooselle, miten oliot tulee tallettaa tietokantaan.
 const personSchema = new mongoose.Schema({
-  name: String,
-  number: String
+  name: {
+    type: String,
+    required: true
+  },
+  number: {
+     type: String,
+     minlength: 10,
+     required: true
+  }
 })
 
 const Person = mongoose.model('Person', personSchema)
