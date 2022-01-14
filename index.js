@@ -1,4 +1,3 @@
-const { json } = require('express')
 require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
@@ -18,22 +17,18 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms :p
 
 const errorHandler = (error, request, response, next) => {
   console.error(error.message)
-
   if (error.name === 'CastError') {
-    return response.status(400).send({ error: 'malformatted id' })
+    response.status(400).send({ error: 'malformatted id' })
   }
-  else if (error.name === 'ValidationError') {    
-    return response.status(400).json({ error: error.message })
-    next(error)
+  else if (error.name === 'ValidationError') {   
+    response.status(400).json({ error: error.message })
   }
+  next(error)
 }
-// tämä tulee kaikkien muiden middlewarejen rekisteröinnin jälkeen!
-app.use(errorHandler)
 
 //app.use(morgan('tiny'))
-morgan.token('personInfo', (request, response) =>
-{
-  return JSON.stringify(request.body)
+morgan.token('personInfo', (request, response) => {
+  JSON.stringify(request.body)
 })
 
 // Route juureen. Routet ovat tapahtumankäsittelijöitä, jotka käsittelevät pyynnöt osoitteeseen.
@@ -89,9 +84,8 @@ app.get('/info', (req, res) => {
   })
 
   app.post('/api/persons', (request, response, next) => {
-    //console.log(`request.body: ${request.body.name}`)
+    console.log(`request.body: ${request.body.name}`)
     const body = request.body
-
 
     if (!body.name || !body.number) {
       return response.status(400).json({ 
@@ -99,39 +93,31 @@ app.get('/info', (req, res) => {
       })
     }
 
-    Person.find({}).then(person => {
-      console.log("person: ", person)
-      if (person.some(p => p.name === body.name )){
-        return response.status(400).json({ 
-          error: 'Name must be unique' 
-        })
-      }
-    })
-    .catch(error => next(error))
+    //TODO: varmista await find().metodin yhteydessä.
+    if (Person.find({name: body.name})){
+      return response.status(400).json({ 
+      error: 'Name must be unique' 
+      })
+    }
     
     const person = new Person({
-      name: body.name,
-      number: body.number
-    })
-  
+        name: body.name,
+        number: body.number
+      })
+    
     /*Pyyntöön vastataan save-operaation takaisinkutsufunktion sisällä. 
     Näin varmistutaan, että operaation vastaus tapahtuu vain, jos operaatio 
     on onnistunut. Palaamme virheiden käsittelyyn myöhemmin.*/
-    console.log("person.save() seuraavaksi:", person)
-    person.save().then(savedPerson => {
-      response.json(savedPerson)
-    })
+    person.save()
+    .then(savedPerson => savedPerson.toJSON())
+    .then(savedAndFormattedPerson=> response.json(savedAndFormattedPerson))
     .catch(error => next(error))
-
-    //persons = persons.concat(person)
   
     response.json(person)
   })
 
   // Numeron päivitys jo olemassa olevalle henkilölle.
   app.put('/api/persons/:id', (request, response, next) => {
-
-    console.log("!!!!! app.put request.body: ", request.body)
     const body = request.body
 
     const person = {
@@ -139,7 +125,6 @@ app.get('/info', (req, res) => {
       number: body.number
     }
 
-    console.log("!!!! request.params.id: ", request.params.id)
     Person.findByIdAndUpdate(request.params.id, person, {new : true})
     .then(updatePerson => {
       response.status(204).json(updatePerson)
@@ -147,18 +132,8 @@ app.get('/info', (req, res) => {
     .catch(error => next(error))
 })
 
-  const generateId = () => {
-    const newId = Math.floor(Math.random() * 38000)
-
-    return newId
-    // Jos person-lenght on isompi kuin 0, niin maxId saa arvokseen 
-    /*const maxId = persons.length > 0
-      ? Math.max(...persons.map(n => n.id)) //luodaan uusi taulukko jossa vain id-numerot, josta max()-funktiolla etsitään suurin arvo
-      : 0
-
-    return maxId + 1
-    */
-  }
+  // tämä tulee kaikkien muiden middlewarejen rekisteröinnin jälkeen!
+app.use(errorHandler)
 
 //const PORT = process.env.PORT || 3001
 const PORT = process.env.PORT

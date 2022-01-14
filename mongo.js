@@ -1,4 +1,7 @@
+// Mongon ja mongoosen komentorivitesteri.
+
 const mongoose = require('mongoose')
+const uniqueValidator = require('mongoose-unique-validator')
 
 const password = process.argv[2]
 
@@ -13,6 +16,7 @@ mongoose.connect(url)
 const personSchema = new mongoose.Schema({
   name: {
     type: String,
+    unique: true,
     required: true
   },
   number: {
@@ -21,6 +25,8 @@ const personSchema = new mongoose.Schema({
      required: true
   }
 })
+
+personSchema.plugin(uniqueValidator)
 
 const Person = mongoose.model('Person', personSchema)
 //console.log(addingNew)

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const uniqueValidator = require('mongoose-unique-validator')
 
 //const url = `mongodb+srv://fullstack:${password}@cluster0.6kjcn.mongodb.net/myFirstDatabase?retryWrites=true`
 
@@ -8,9 +9,20 @@ mongoose.connect(url)
 
 // Scheema kertoo mongooselle, miten oliot tulee tallettaa tietokantaan.
 const personSchema = new mongoose.Schema({
-  name: String,
-  number: String
+  name: {
+    type: String,
+    minlength: 8,
+    unique: true,
+    required: true
+  },
+  number: {
+     type: String,
+     minlength: 3,
+     required: true
+  }
 })
+
+personSchema.plugin(uniqueValidator)
 
 personSchema.set('toJSON', {
   transform: (document, responsePerson) => {
