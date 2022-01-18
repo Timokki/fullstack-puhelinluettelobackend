@@ -12,7 +12,7 @@ const personSchema = new mongoose.Schema({
   name: {
     type: String,
     minlength: 8,
-    unique: true,
+    //TODO: unique: true, ei toimi uniqueValidatorin kanssa oikein. 
     required: true
   },
   number: {

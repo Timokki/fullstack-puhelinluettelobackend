@@ -93,27 +93,38 @@ app.get('/info', (req, res) => {
       })
     }
 
-    //TODO: varmista await find().metodin yhteydessä.
-    if (Person.find({name: body.name})){
-      return response.status(400).json({ 
-      error: 'Name must be unique' 
-      })
-    }
+    // Käytä callback-funktiota. Then-ketjutus ei toimi kuten normaaleissa 
+    // promisen palauttavissa funktioissa.
+    Person.findOne({name: body.name}, (err, doc) => {
+      if (doc != null)
+        {
+        try {
+          if (err) return err
+
+          if (doc.name === body.name){
+            throw "Name unique validation error"
+          }
+        }
+        catch (err)
+        {
+          return response.status(400).json({ 
+            error: err}) //'Name must be unique'
+        }
+      } else{
+          const person = new Person({
+            name: body.name,
+            number: body.number
+          })
     
-    const person = new Person({
-        name: body.name,
-        number: body.number
-      })
-    
-    /*Pyyntöön vastataan save-operaation takaisinkutsufunktion sisällä. 
-    Näin varmistutaan, että operaation vastaus tapahtuu vain, jos operaatio 
-    on onnistunut. Palaamme virheiden käsittelyyn myöhemmin.*/
-    person.save()
-    .then(savedPerson => savedPerson.toJSON())
-    .then(savedAndFormattedPerson=> response.json(savedAndFormattedPerson))
-    .catch(error => next(error))
-  
-    response.json(person)
+          /*Pyyntöön vastataan save-operaation takaisinkutsufunktion sisällä. 
+          Näin varmistutaan, että operaation vastaus tapahtuu vain, jos operaatio 
+          on onnistunut. Palaamme virheiden käsittelyyn myöhemmin.*/
+          person.save()
+          .then(savedPerson => savedPerson.toJSON())
+          .then(savedAndFormattedPerson=> response.json(savedAndFormattedPerson))
+          .catch(error => next(error))
+        }
+    })
   })
 
   // Numeron päivitys jo olemassa olevalle henkilölle.
