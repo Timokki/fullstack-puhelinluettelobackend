@@ -102,6 +102,8 @@ app.post('/api/persons', (request, response, next) => {
       try {
         if (err) return err
 
+        console.log(`doc.name.toLowerCase() ${doc.name.toLowerCase()} === body.name.toLowerCase() ${body.name.toLowerCase()}`)
+        // findOne-metodi on casesensitiivinen, joten alla oleva if-ehto tarpeeton toistaiseksi.
         if (doc.name === body.name){
           throw 'Name unique validation error'
         }
