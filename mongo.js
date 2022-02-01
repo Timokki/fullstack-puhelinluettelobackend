@@ -6,7 +6,7 @@ const uniqueValidator = require('mongoose-unique-validator')
 const password = process.argv[2]
 
 //console.log("process.argv.length: ", process.argv.length)
-const addingNew = (process.argv.length>3) ? true : false; 
+const addingNew = (process.argv.length>3) ? true : false
 
 const url = `mongodb+srv://fullstack:${password}@cluster0.6kjcn.mongodb.net/myFirstDatabase?retryWrites=true`
 
@@ -20,9 +20,9 @@ const personSchema = new mongoose.Schema({
     required: true
   },
   number: {
-     type: String,
-     minlength: 10,
-     required: true
+    type: String,
+    minlength: 10,
+    required: true
   }
 })
 
@@ -41,15 +41,16 @@ if (addingNew)
     number: numberArg
   })
 
-  // Koska oliot on luotu modelien konstruktorifunktiolla, niillä on kaikki modelien 
+  // Koska oliot on luotu modelien konstruktorifunktiolla, niillä on kaikki modelien
   // ominaisuudet eli joukko metodeja, joiden avulla olioita voidaan mm. tallettaa tietokantaan.
+  // eslint-disable-next-line no-unused-vars
   person.save().then(response => {
     console.log('person saved!')
     mongoose.connection.close() // TÄRKEÄ, yhteys tietokantaan suljetaan vasta kun tallennus on valmis.
   })
 } else {
   Person.find({}).then(result => {
-    console.log("Phonebook:")
+    console.log('Phonebook:')
     result.forEach(person => {
       console.log(`${person.name} ${person.number}`)
     })
